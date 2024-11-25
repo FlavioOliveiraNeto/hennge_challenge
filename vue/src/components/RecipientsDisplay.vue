@@ -36,7 +36,7 @@
         </div>
       </div>
     </div>
-  </template>
+</template>
   
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, watch, nextTick } from "vue";
@@ -107,12 +107,12 @@ export default defineComponent({
 
             if (totalWidth + recipientWidth <= availableWidth) {
                 visibleRecipients.value.push(recipient);
-                totalWidth += recipientWidth + 8; // 8 é o espaço extra entre os elementos
+                totalWidth += recipientWidth + 8; // 8 é o espaço extra entre os elementos (melhora a visualização)
             } else if (visibleRecipients.value.length === 0) {
                 // Quando o primeiro destinatário não couber
                 const truncatedRecipient = truncateRecipient(recipient, availableWidth);
                 if (truncatedRecipient === "...") {
-                    visibleRecipients.value = ['...']; // Mostra apenas '...'
+                    visibleRecipients.value = ['...']; // Mostra apenas '...' se o primeiro email não tiver caractere relevante
                     firstRecipientTruncated = true;
                     break; // Não continua, pois já foi truncado
                 } else {
