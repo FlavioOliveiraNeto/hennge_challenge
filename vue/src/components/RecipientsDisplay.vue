@@ -7,10 +7,13 @@
         ref="recipientsList"
         :style="{ display: 'flex', alignItems: 'center' }"
       >
+        <!-- Destinatários visíveis -->
         <span v-for="(recipient, index) in visibleRecipients" :key="index">
-          {{ recipient }}<span v-if="index < visibleRecipients.length - 1">,&nbsp;</span>
+          {{ recipient }}<span v-if="index < visibleRecipients.length - 1">,&nbsp</span>
         </span>
-        <span v-if="hasTrimmedRecipients">, ...&nbsp;</span>
+  
+        <!-- Reticências e Badge quando houver truncamento -->
+        <span v-if="hasTrimmedRecipients">&nbsp</span>
         <RecipientsBadge
           ref="recipientsBadge"
           class="badge"
@@ -20,6 +23,7 @@
           @mouseleave="showTooltip = false"
         />
       </div>
+  
       <div
         class="recipients-tooltip"
         ref="recipientsTooltip"
@@ -32,7 +36,7 @@
         </div>
       </div>
     </div>
-</template>  
+  </template>
   
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, watch, nextTick } from "vue";
@@ -82,33 +86,50 @@ export default defineComponent({
     };
 
     const calculateVisibleRecipients = async (): Promise<void> => {
-      if (!recipientsContainer.value || !recipientsList.value) return;
+        if (!recipientsContainer.value || !recipientsList.value) return;
 
-      await nextTick(); // Aguarda renderização do badge
+        await nextTick(); // Aguarda renderização do badge
 
-      const containerWidth = recipientsContainer.value.offsetWidth;
-      const badgeWidth = recipientsBadge.value?.$el?.offsetWidth || 0;
-      const availableWidth = containerWidth - badgeWidth - 60; // Espaço para margens
+        const containerWidth = recipientsContainer.value.offsetWidth;
+        const badgeWidth = recipientsBadge.value?.$el?.offsetWidth || 0;
+        const availableWidth = containerWidth - badgeWidth - 60;
 
-      visibleRecipients.value = [];
-      trimmedCount.value = 0;
+        visibleRecipients.value = [];
+        trimmedCount.value = 0;
 
-      let totalWidth = 0;
+        let totalWidth = 0;
 
-      for (const recipient of props.recipients) {
-        const recipientWidth = getElementWidth(recipient);
-        if (totalWidth + recipientWidth <= availableWidth) {
-          visibleRecipients.value.push(recipient);
-          totalWidth += recipientWidth + 8; // Inclui espaçamento
-        } else if (visibleRecipients.value.length === 0) {
-          visibleRecipients.value.push(truncateRecipient(recipient, availableWidth));
-          break;
-        } else {
-          break;
+        // Variável para saber se o primeiro destinatário foi truncado
+        let firstRecipientTruncated = false;
+
+        for (const recipient of props.recipients) {
+            const recipientWidth = getElementWidth(recipient);
+
+            if (totalWidth + recipientWidth <= availableWidth) {
+                visibleRecipients.value.push(recipient);
+                totalWidth += recipientWidth + 8; // 8 é o espaço extra entre os elementos
+            } else if (visibleRecipients.value.length === 0) {
+                // Quando o primeiro destinatário não couber
+                const truncatedRecipient = truncateRecipient(recipient, availableWidth);
+                if (truncatedRecipient === "...") {
+                    visibleRecipients.value = ['...']; // Mostra apenas '...'
+                    firstRecipientTruncated = true;
+                    break; // Não continua, pois já foi truncado
+                } else {
+                    visibleRecipients.value.push(truncatedRecipient);
+                    break; // Se não for truncado, também para aqui
+                }
+            } else {
+                break;
+            }
         }
-      }
 
-      trimmedCount.value = props.recipients.length - visibleRecipients.value.length;
+        trimmedCount.value = props.recipients.length - visibleRecipients.value.length;
+
+        // Adiciona +1 à contagem caso o primeiro destinatário tenha sido truncado para '...'
+        if (firstRecipientTruncated) {
+        trimmedCount.value += 1;
+        }
     };
 
     const adjustTooltipPosition = (): void => {
